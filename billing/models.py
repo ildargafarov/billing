@@ -1,15 +1,16 @@
 from datetime import datetime
 
+import attr
 from sqlalchemy import Column, BigInteger, Sequence, DateTime, ForeignKey, String, Numeric
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
 
 Base = declarative_base()
 
-CURRENT_ACCOUNT_NAME = 'Current'
 _CUSTOMERS_TABLE_NAME = 'customers'
 _ACCOUNTS_TABLE_NAME = 'accounts'
 _TNXS_TABLE_NAME = 'transactions'
+
+customer_id_sequence = Sequence('customer_id_seq')
 
 
 class Customer(Base):
@@ -17,7 +18,6 @@ class Customer(Base):
 
     id = Column(
         BigInteger,
-        Sequence('customer_id_seq'),
         primary_key=True)
 
     register_date = Column(
@@ -29,27 +29,22 @@ class Account(Base):
     __tablename__ = _ACCOUNTS_TABLE_NAME
 
     id = Column(
-        BigInteger,
-        Sequence('account_id_seq'),
-        primary_key=True)
-
-    name = Column(
         String(140),
-        default=CURRENT_ACCOUNT_NAME,
-        nullable=False
+        nullable=False,
+        primary_key=True
     )
 
-    customer_id = Column(
-        BigInteger,
-        ForeignKey(f'{_CUSTOMERS_TABLE_NAME}.id'))
-
-    customer = relationship(
-        "Customer",
-        back_populates="accounts")
+    balance = Column(
+        Numeric(asdecimal=True)
+    )
 
     create_date = Column(
         DateTime,
         default=datetime.now)
+
+    customer_id = Column(
+        BigInteger,
+        ForeignKey(f'{_CUSTOMERS_TABLE_NAME}.id'))
 
 
 class Transaction(Base):
@@ -66,17 +61,19 @@ class Transaction(Base):
     )
 
     sender_account_id = Column(
-        BigInteger,
+        String,
         ForeignKey(f'{_ACCOUNTS_TABLE_NAME}.id'))
 
     receiver_account_id = Column(
-        BigInteger,
+        String,
         ForeignKey(f'{_ACCOUNTS_TABLE_NAME}.id'))
-
-    account = relationship(
-        "Account",
-        back_populates="transactions")
 
     create_date = Column(
         DateTime,
         default=datetime.now)
+
+
+@attr.s
+class RegisterData:
+    customer_id: int = attr.ib()
+    current_account_id: str = attr.ib()
