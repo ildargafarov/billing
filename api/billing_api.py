@@ -1,16 +1,17 @@
 """
 Links Endpoints
 """
+from datetime import datetime
+
 from flask import Blueprint, request
 
+import billing
 from context import app_ctx
 from .exceptions import BadRequest
 from .responses import (Statuses,
                         success_response,
                         error_response,
                         response)
-import txn_queue
-import billing
 
 bp = Blueprint('billing_api', __name__, url_prefix='/api/v1/billing/')
 
@@ -72,18 +73,18 @@ def add_txn():
     :return: domains
     """
     data = request.get_json()
-    if not data.get('debit_account_id'):
-        raise BadRequest('Field "debit_account_id" is required')
+    if not data.get('debitAccountId'):
+        raise BadRequest('Field "debitAccountId" is required')
     if not data.get('amount'):
         raise BadRequest('Field "amount" is required')
 
-    txn = txn_queue.Transaction.from_data(
-        data.get('amount'),
-        data.get('credit_account_id'),
-        data.get('debit_account_id')
+    txn = billing.Transaction(
+        amount=data.get('amount'),
+        credit_account_id=data.get('creditAccountId'),
+        debit_account_id=data.get('debitAccountId'),
+        create_date=datetime.now()
     )
-    domains = app_ctx.queue_client.add(txn)
+    app_ctx.process_txn.delay(txn.dump())
 
     resp = success_response()
-    resp['domains'] = list(domains.domains)
     return resp

@@ -7,15 +7,11 @@ from flask import request
 
 import settings
 
-logging.basicConfig(
-    level=settings.LOG_LEVEL,
-    format='%(asctime)s %(name)s %(filename)s:%(lineno)d %(levelname)s '
-           '%(message)s')
-
 handler = logging.StreamHandler()
 handler.setFormatter(
     logging.Formatter(
-        '%(asctime)s %(levelname)s %(message)s'))
+        '%(asctime)s %(name)s %(filename)s:%(lineno)d %(levelname)s '
+        '%(message)s'))
 logger = logging.getLogger('API')
 logger.handlers = [handler]
 logger.setLevel(settings.LOG_LEVEL)

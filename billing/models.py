@@ -1,4 +1,6 @@
+import json
 from datetime import datetime
+from decimal import Decimal
 
 import attr
 from sqlalchemy import Column, BigInteger, Sequence, DateTime, ForeignKey, String, Numeric
@@ -60,17 +62,35 @@ class Transaction(Base):
         nullable=False
     )
 
-    sender_account_id = Column(
+    credit_account_id = Column(
         String,
         ForeignKey(f'{_ACCOUNTS_TABLE_NAME}.id'))
 
-    receiver_account_id = Column(
+    debit_account_id = Column(
         String,
         ForeignKey(f'{_ACCOUNTS_TABLE_NAME}.id'))
 
     create_date = Column(
         DateTime,
         default=datetime.now)
+
+    @classmethod
+    def from_dump(cls, dump: str):
+        data = json.loads(dump)
+        return cls(
+            amount=Decimal.from_float(data["amount"]),
+            credit_account_id=data["creditAccountId"],
+            debit_account_id=data["debitAccountId"],
+            create_date=datetime.fromtimestamp(data["createDate"])
+        )
+
+    def dump(self) -> str:
+        return json.dumps({
+            "amount": float(self.amount),
+            "creditAccountId": self.credit_account_id,
+            "debitAccountId": self.debit_account_id,
+            "createDate": self.create_date.timestamp()
+        })
 
 
 @attr.s

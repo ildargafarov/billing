@@ -1,19 +1,13 @@
 import logging
-from datetime import datetime
+
 import attr
-from sqlalchemy import (BigInteger, Column,
-                        DateTime, MetaData,
-                        String, Table, ARRAY,
-                        create_engine)
-from sqlalchemy import func
-from sqlalchemy.dialects.postgresql import (insert as pg_insert,
-                                            array_agg as pg_array_agg)
+from sqlalchemy import (create_engine)
 from sqlalchemy.engine.url import URL
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import mapper, sessionmaker, scoped_session
-from sqlalchemy.sql import and_, select
+from sqlalchemy.orm import sessionmaker, scoped_session
+
 from .exceptions import BillingError
-from .models import Customer, Transaction, Account, Base, customer_id_sequence, RegisterData
+from .models import Customer, Account, Base, customer_id_sequence, RegisterData
 
 
 class RepositoryError(BillingError):
@@ -74,11 +68,13 @@ class BillingRepository:
     def init(self):
         Base.metadata.create_all(self._engine,
                                  checkfirst=True)
+        customer_id_sequence.create(bind=self._engine,
+                                    checkfirst=True)
 
     def release_connections(self):
         self._session_factory.remove()
 
-    def __enter__(self):
+    def begin(self):
         return BillingRepository(
             self._engine,
             self._session_factory,
@@ -87,14 +83,12 @@ class BillingRepository:
             autocommit=False
         )
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def commit(self):
         if self._session:
             try:
-                if exc_type is None:
-                    self._session.commit()
-                else:
-                    self._session.rollback()
+                self._session.commit()
             except SQLAlchemyError as err:
+                self._session.rollback()
                 self._logger.exception(
                     'Unexpected error during commit or rollback.')
                 raise RepositoryError(str(err))
@@ -142,6 +136,16 @@ class BillingRepository:
         return RegisterData(customer_id,
                             account_id)
 
+    def update_account(self, account):
+        session = self._get_session()
+        session.merge(account)
+        self._commit(session)
+
+    def save_txn(self, txn):
+        session = self._get_session()
+        session.add(txn)
+        self._commit(session)
+
     def get_customer(self, customer_id):
         session = self._get_session()
         query = session.query(Customer).filter(Customer.id == customer_id)
@@ -156,3 +160,8 @@ class BillingRepository:
         session = self._get_session()
         query = session.query(Account).filter(Account.customer_id == customer_id)
         return query.all()
+
+    def get_account(self, account_id):
+        session = self._get_session()
+        query = session.query(Account).filter(Account.id == account_id)
+        return query.one()

@@ -25,3 +25,6 @@ PG_USER = _env.str("POSTGRES_USER",
                    default="postgres")
 PG_PASSWORD = _env.str("POSTGRES_PASSWORD",
                        default="postgres")
+
+WORKER_NAME_PREFIX = _env.str("WORKER_NAME_PREFIX",
+                              default="BillingWorker")

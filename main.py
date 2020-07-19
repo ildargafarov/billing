@@ -1,17 +1,17 @@
 """
 Application starting point
 """
+import logging
+
 import fire
 
 import api
 import billing
-import txn_queue
 import settings
 from context import init_context, app_ctx
+import worker
 
-
-def _create_queue_client():
-    return txn_queue.rabbitmq_client(settings.RABBIT_HOST)
+logging.basicConfig(level=settings.LOG_LEVEL)
 
 
 def _create_billing_repo():
@@ -24,6 +24,12 @@ def _create_billing_repo():
     )
 
 
+def _create_process_txn_task():
+    billing_repository = _create_billing_repo()
+    billing_service = billing.BillingService(billing_repository)
+    return worker.ProcessTransaction('Main', billing_service)
+
+
 def start_api():
     def teardown_app_context(flask_ctx):
         app_ctx._billing_repository.release_connections()
@@ -33,10 +39,10 @@ def start_api():
         Create all services
         :return: None
         """
-        app_ctx.queue_client = _create_queue_client()
         app_ctx._billing_repository = _create_billing_repo()
         app_ctx.billing = billing.BillingService(
             app_ctx._billing_repository)
+        app_ctx.process_txn = worker.ProcessTransaction('Main', app_ctx.billing)
 
     def before_first_request():
         """
@@ -44,12 +50,19 @@ def start_api():
         """
         init_context()
         init_services()
+        worker.init_celery(settings.WORKER_NAME_PREFIX,
+                           app_ctx.process_txn)
 
     app = api.create_app(
         before_first_request=before_first_request,
         teardown_appcontext=teardown_app_context
     )
     app.run()
+
+
+def start_worker():
+    process_txn_task = _create_process_txn_task()
+    worker.run(process_txn_task)
 
 
 def init_pg_tables():
