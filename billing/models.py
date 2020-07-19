@@ -5,6 +5,7 @@ from decimal import Decimal
 import attr
 from sqlalchemy import Column, BigInteger, Sequence, DateTime, ForeignKey, String, Numeric
 from sqlalchemy.ext.declarative import declarative_base
+from typing import List
 
 Base = declarative_base()
 
@@ -93,7 +94,36 @@ class Transaction(Base):
         })
 
 
-@attr.s
+@attr.s(slots=True, frozen=True)
 class RegisterData:
     customer_id: int = attr.ib()
     current_account_id: str = attr.ib()
+
+
+@attr.s
+class Operation:
+    amount: Decimal = attr.ib()
+    balance: Decimal = attr.ib()
+    date: datetime = attr.ib()
+
+    @classmethod
+    def from_txn(cls, txn, account, balance=None):
+        if account.id == txn.credit_account_id:
+            amount = -1 * txn.amount
+        else:
+            amount = txn.amount
+
+        return cls(
+            amount,
+            balance,
+            txn.create_date
+        )
+
+
+@attr.s
+class AccountOperations:
+    account_id: str = attr.ib()
+    balance: Decimal = attr.ib()
+    create_date: datetime = attr.ib()
+    customer_id: int = attr.ib()
+    operations: List[Operation] = attr.ib()

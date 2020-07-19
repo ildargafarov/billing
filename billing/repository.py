@@ -1,14 +1,19 @@
 import logging
 
 import attr
-from sqlalchemy import (create_engine)
+from sqlalchemy import (create_engine, or_)
 from sqlalchemy.engine.url import URL
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.orm.exc import NoResultFound
 
 from .exceptions import BillingError, NotFound
-from .models import Customer, Account, Base, customer_id_sequence, RegisterData
+from .models import (Customer,
+                     Account,
+                     Transaction,
+                     Base,
+                     customer_id_sequence,
+                     RegisterData)
 
 
 class RepositoryError(BillingError):
@@ -71,6 +76,7 @@ class BillingRepository:
                                  checkfirst=True)
         customer_id_sequence.create(bind=self._engine,
                                     checkfirst=True)
+        # TODO add indexes
 
     def release_connections(self):
         self._session_factory.remove()
@@ -127,7 +133,7 @@ class BillingRepository:
         customer.id = customer_id
         account.customer_id = customer_id
 
-        account_id = f'{customer.id}/{account_name}'
+        account_id = f'{customer.id}:{account_name}'
         account.id = account_id
         session.add(customer)
         session.flush()
@@ -172,3 +178,11 @@ class BillingRepository:
             return query.one()
         except NoResultFound:
             raise NotFound('Account not found')
+
+    def get_transactions(self, account_id):
+        session = self._get_session()
+        query = session.query(Transaction).filter(or_(
+            Transaction.debit_account_id == account_id,
+            Transaction.credit_account_id == account_id
+        ))
+        return query.all()

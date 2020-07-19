@@ -1,7 +1,9 @@
+from operator import attrgetter
+
 import attr
 
-from .exceptions import NotFound, LackOfMoney
-from .models import Customer, Account, Transaction
+from .exceptions import LackOfMoney
+from .models import Customer, Account, Transaction, Operation, AccountOperations
 from .repository import BillingRepository
 
 CURRENT_ACCOUNT_NAME = 'current'
@@ -40,7 +42,32 @@ class BillingService:
         return self._repository.get_customers()
 
     def get_customer_accounts(self, customer_id):
-        customer = self._repository.get_customer(customer_id)
-        if not customer:
-            raise NotFound('Customer not found.')
+        # Check that customer exists
+        self._repository.get_customer(customer_id)
         return self._repository.get_customer_accounts(customer_id)
+
+    def get_account_operations(self, account_id):
+        # Check that account exists
+        account = self._repository.get_account(account_id)
+        txns = self._repository.get_transactions(account_id)
+        txns = sorted(
+            txns,
+            key=attrgetter('create_date')
+        )
+        operations = [
+            Operation.from_txn(txn, account)
+            for txn in txns
+        ]
+        balance = 0
+        for operation in operations:
+            balance += operation.amount
+            operation.balance = balance
+
+        operations.reverse()
+
+        return AccountOperations(
+            account.id,
+            account.balance,
+            account.create_date,
+            account.customer_id,
+            operations)

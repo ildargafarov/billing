@@ -94,3 +94,25 @@ def add_txn():
 
     resp = success_response()
     return resp
+
+
+@bp.route('/accounts/<account_id>/operations', methods=['GET'])
+def get_operations(account_id):
+    """
+    Endpoint for getting operations
+    """
+    operations = app_ctx.billing.get_account_operations(account_id)
+    return response({
+        "accountId": operations.account_id,
+        "balance": float(operations.balance),
+        "create_date": operations.create_date.isoformat(),
+        "customer_id": operations.customer_id,
+        "operations": [
+            {
+                "amount": float(operation.amount),
+                "balance": float(operation.balance),
+                "date": operation.date.isoformat(),
+            }
+            for operation in operations.operations
+        ]
+    })
