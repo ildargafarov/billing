@@ -1,6 +1,6 @@
 import attr
 
-from .exceptions import NotFound
+from .exceptions import NotFound, LackOfMoney
 from .models import Customer, Account, Transaction
 from .repository import BillingRepository
 
@@ -23,6 +23,9 @@ class BillingService:
 
         if txn.credit_account_id:
             credit_account = session.get_account(txn.credit_account_id)
+            if credit_account.balance < txn.amount:
+                raise LackOfMoney(f'Lack of money on account {txn.credit_account_id}.')
+
             credit_account.balance = credit_account.balance - txn.amount
             session.update_account(credit_account)
 

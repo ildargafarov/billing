@@ -5,8 +5,9 @@ from sqlalchemy import (create_engine)
 from sqlalchemy.engine.url import URL
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker, scoped_session
+from sqlalchemy.orm.exc import NoResultFound
 
-from .exceptions import BillingError
+from .exceptions import BillingError, NotFound
 from .models import Customer, Account, Base, customer_id_sequence, RegisterData
 
 
@@ -147,9 +148,12 @@ class BillingRepository:
         self._commit(session)
 
     def get_customer(self, customer_id):
-        session = self._get_session()
-        query = session.query(Customer).filter(Customer.id == customer_id)
-        return query.one()
+        try:
+            session = self._get_session()
+            query = session.query(Customer).filter(Customer.id == customer_id)
+            return query.one()
+        except NoResultFound:
+            raise NotFound('Customer not found')
 
     def get_customers(self):
         session = self._get_session()
@@ -162,6 +166,9 @@ class BillingRepository:
         return query.all()
 
     def get_account(self, account_id):
-        session = self._get_session()
-        query = session.query(Account).filter(Account.id == account_id)
-        return query.one()
+        try:
+            session = self._get_session()
+            query = session.query(Account).filter(Account.id == account_id)
+            return query.one()
+        except NoResultFound:
+            raise NotFound('Account not found')

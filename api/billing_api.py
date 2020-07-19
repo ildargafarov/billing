@@ -22,6 +22,12 @@ def _handle_not_found(ex):
             Statuses.NOT_FOUND)
 
 
+@bp.errorhandler(billing.LackOfMoney)
+def _handle_lack_of_money(ex):
+    return (error_response(str(ex)),
+            Statuses.BAD_REQUEST)
+
+
 @bp.route('/customers', methods=['GET'])
 def get_customers():
     """
