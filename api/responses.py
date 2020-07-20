@@ -1,10 +1,11 @@
 """
 Status response objects
 """
-from enum import IntEnum
 import json
-from flask import Response
+from enum import IntEnum
+
 import attr
+from flask import Response
 
 
 class Statuses(IntEnum):
@@ -48,8 +49,6 @@ def error_response(message):
     :return: Error status response object
     """
     return attr.asdict(Error(message=message))
-
-
 
 
 def response(any_obj, headers=None):
