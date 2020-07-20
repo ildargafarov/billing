@@ -24,8 +24,7 @@ lazy-object-proxy==1.4.3  # via astroid
 markupsafe==1.1.1         # via jinja2
 marshmallow==3.7.0        # via environs
 mccabe==0.6.1             # via pylint
-pika==1.1.0               # via -r requirements.in
-psycopg2-binary==2.8.5    # via -r requirements.in
+psycopg2==2.8.5           # via -r requirements.in
 pylint==2.5.0             # via -r requirements.in
 pyrsistent==0.16.0        # via jsonschema
 python-dotenv==0.14.0     # via environs

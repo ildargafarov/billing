@@ -1,0 +1,52 @@
+version: '3'
+services:
+  pg:
+    image: 'postgres:latest'
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: billing
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+
+  rabbitmq:
+    image: 'rabbitmq:latest'
+    restart: always
+
+  api:
+    build:
+      dockerfile: Dockerfile
+      context: .
+    restart: always
+    command:
+      - sh
+      - -c
+      - |
+        python main.py init_pg_tables
+        gunicorn 'main:create_api_app()' --bind 0.0.0.0:5000 --workers=1
+    environment:
+      - LOG_LEVEL=INFO
+      - POSTGRES_HOST=pg
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DATABASE=billing
+      - RABBIT_HOST=rabbitmq
+    ports:
+      - "5000:5000"
+
+  worker:
+    build:
+      dockerfile: Dockerfile
+      context: .
+    command: python main.py start_worker
+    restart: always
+    environment:
+      - LOG_LEVEL=INFO
+      - POSTGRES_HOST=pg
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DATABASE=billing
+      - RABBIT_HOST=rabbitmq

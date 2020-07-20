@@ -30,7 +30,7 @@ def _create_process_txn_task():
     return worker.ProcessTransaction('Main', billing_service)
 
 
-def start_api():
+def create_api_app():
     def teardown_app_context(flask_ctx):
         app_ctx._billing_repository.release_connections()
 
@@ -57,7 +57,8 @@ def start_api():
         before_first_request=before_first_request,
         teardown_appcontext=teardown_app_context
     )
-    app.run()
+
+    return app
 
 
 def start_worker():
