@@ -47,7 +47,8 @@ class Account(Base):
 
     customer_id = Column(
         BigInteger,
-        ForeignKey(f'{_CUSTOMERS_TABLE_NAME}.id'))
+        ForeignKey(f'{_CUSTOMERS_TABLE_NAME}.id'),
+        index=True)
 
 
 class Transaction(Base):
@@ -65,11 +66,15 @@ class Transaction(Base):
 
     credit_account_id = Column(
         String,
-        ForeignKey(f'{_ACCOUNTS_TABLE_NAME}.id'))
+        ForeignKey(f'{_ACCOUNTS_TABLE_NAME}.id'),
+        index=True
+    )
 
     debit_account_id = Column(
         String,
-        ForeignKey(f'{_ACCOUNTS_TABLE_NAME}.id'))
+        ForeignKey(f'{_ACCOUNTS_TABLE_NAME}.id'),
+        index=True
+    )
 
     create_date = Column(
         DateTime,

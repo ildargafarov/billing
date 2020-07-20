@@ -76,7 +76,6 @@ class BillingRepository:
                                  checkfirst=True)
         customer_id_sequence.create(bind=self._engine,
                                     checkfirst=True)
-        # TODO add indexes
 
     def release_connections(self):
         self._session_factory.remove()
