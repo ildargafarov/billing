@@ -26,5 +26,7 @@ PG_USER = _env.str("POSTGRES_USER",
 PG_PASSWORD = _env.str("POSTGRES_PASSWORD",
                        default="postgres")
 
-WORKER_NAME_PREFIX = _env.str("WORKER_NAME_PREFIX",
-                              default="BillingWorker")
+QUEUE_NAME_PREFIX = _env.str("QUEUE_NAME_PREFIX",
+                             default="billing")
+
+QUEUES_COUNT = _env.int("QUEUES_COUNT", default=3)

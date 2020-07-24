@@ -36,7 +36,37 @@ services:
     ports:
       - "5000:5000"
 
-  worker:
+  worker_1:
+    build:
+      dockerfile: Dockerfile
+      context: .
+    command: python main.py start_worker
+    restart: always
+    environment:
+      - LOG_LEVEL=INFO
+      - POSTGRES_HOST=pg
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DATABASE=billing
+      - RABBIT_HOST=rabbitmq
+
+  worker_2:
+    build:
+      dockerfile: Dockerfile
+      context: .
+    command: python main.py start_worker
+    restart: always
+    environment:
+      - LOG_LEVEL=INFO
+      - POSTGRES_HOST=pg
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DATABASE=billing
+      - RABBIT_HOST=rabbitmq
+
+  worker_3:
     build:
       dockerfile: Dockerfile
       context: .

@@ -12,6 +12,7 @@ from .responses import (Statuses,
                         success_response,
                         error_response,
                         response)
+from worker import queue_name
 
 bp = Blueprint('billing_api', __name__, url_prefix='/api/v1/billing/')
 
@@ -90,7 +91,10 @@ def add_txn():
         debit_account_id=data.get('debitAccountId'),
         create_date=datetime.now()
     )
-    app_ctx.process_txn.delay(txn.dump())
+
+    app_ctx.process_txn.apply_async(
+        args=[txn.dump()],
+        queue=queue_name(txn))
 
     resp = success_response()
     return resp

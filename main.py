@@ -50,8 +50,7 @@ def create_api_app():
         """
         init_context()
         init_services()
-        worker.init_celery(settings.WORKER_NAME_PREFIX,
-                           app_ctx.process_txn)
+        worker.init_celery(app_ctx.process_txn)
 
     app = api.create_app(
         before_first_request=before_first_request,
