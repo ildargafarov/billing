@@ -17,6 +17,13 @@ from worker import queue_name
 bp = Blueprint('billing_api', __name__, url_prefix='/api/v1/billing/')
 
 
+def _to_float(value):
+    try:
+        return float(value)
+    except (ValueError, TypeError):
+        return BadRequest('Float type expected.')
+
+
 @bp.errorhandler(billing.NotFound)
 def _handle_not_found(ex):
     return (error_response(str(ex)),
@@ -86,7 +93,7 @@ def add_txn():
         raise BadRequest('Field "amount" is required')
 
     txn = billing.Transaction(
-        amount=data.get('amount'),
+        amount=_to_float(data.get('amount')),
         credit_account_id=data.get('creditAccountId'),
         debit_account_id=data.get('debitAccountId'),
         create_date=datetime.now()
@@ -109,8 +116,8 @@ def get_operations(account_id):
     return response({
         "accountId": operations.account_id,
         "balance": float(operations.balance),
-        "create_date": operations.create_date.isoformat(),
-        "customer_id": operations.customer_id,
+        "createDate": operations.create_date.isoformat(),
+        "customerId": operations.customer_id,
         "operations": [
             {
                 "amount": float(operation.amount),
