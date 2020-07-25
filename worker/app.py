@@ -48,5 +48,7 @@ def run(process_txn_task):
         'loglevel': settings.LOG_LEVEL,
         'traceback': True
     }
+    if settings.QUEUE_INDEX:
+        options['queues'] = [_queue_name(settings.QUEUE_INDEX)]
 
     worker_instance.run(**options)

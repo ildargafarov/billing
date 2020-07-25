@@ -30,3 +30,4 @@ QUEUE_NAME_PREFIX = _env.str("QUEUE_NAME_PREFIX",
                              default="billing")
 
 QUEUES_COUNT = _env.int("QUEUES_COUNT", default=3)
+QUEUE_INDEX = _env.int("QUEUE_INDEX", default=None)

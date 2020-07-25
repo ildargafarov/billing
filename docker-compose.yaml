@@ -33,8 +33,25 @@ services:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DATABASE=billing
       - RABBIT_HOST=rabbitmq
+      - QUEUES_COUNT=3
     ports:
       - "5000:5000"
+
+  worker_0:
+    build:
+      dockerfile: Dockerfile
+      context: .
+    command: python main.py start_worker
+    restart: always
+    environment:
+      - LOG_LEVEL=INFO
+      - POSTGRES_HOST=pg
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DATABASE=billing
+      - RABBIT_HOST=rabbitmq
+      - QUEUE_INDEX=0
 
   worker_1:
     build:
@@ -50,6 +67,7 @@ services:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DATABASE=billing
       - RABBIT_HOST=rabbitmq
+      - QUEUE_INDEX=1
 
   worker_2:
     build:
@@ -65,18 +83,4 @@ services:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DATABASE=billing
       - RABBIT_HOST=rabbitmq
-
-  worker_3:
-    build:
-      dockerfile: Dockerfile
-      context: .
-    command: python main.py start_worker
-    restart: always
-    environment:
-      - LOG_LEVEL=INFO
-      - POSTGRES_HOST=pg
-      - POSTGRES_PORT=5432
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DATABASE=billing
-      - RABBIT_HOST=rabbitmq
+      - QUEUE_INDEX=2
