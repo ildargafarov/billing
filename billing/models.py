@@ -102,7 +102,7 @@ class Transaction(Base):
 @attr.s(slots=True, frozen=True)
 class RegisterData:
     customer_id: int = attr.ib()
-    current_account_id: str = attr.ib()
+    account_id: str = attr.ib()
 
 
 @attr.s

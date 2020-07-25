@@ -51,9 +51,14 @@ def error_response(message):
     return attr.asdict(Error(message=message))
 
 
-def response(any_obj, headers=None):
+def response(any_obj, headers=None, dump=True):
+    if dump:
+        body = json.dumps(any_obj)
+    else:
+        body = any_obj
+
     return Response(
-        json.dumps(any_obj),
+        body,
         mimetype="application/json",
         headers=headers
     )

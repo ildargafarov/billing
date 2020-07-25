@@ -1,18 +1,25 @@
 """
 Links Endpoints
 """
-from datetime import datetime
 
 from flask import Blueprint, request
+from pydantic import ValidationError
 
 import billing
 from context import app_ctx
+from worker import queue_name
 from .exceptions import BadRequest
+from .models import (CustomersModel,
+                     CustomerModel,
+                     AccountsModel,
+                     AccountModel,
+                     RegisterCustomerModel,
+                     TransactionModel,
+                     AccountOperationsModel)
 from .responses import (Statuses,
                         success_response,
                         error_response,
                         response)
-from worker import queue_name
 
 bp = Blueprint('billing_api', __name__, url_prefix='/api/v1/billing/')
 
@@ -42,13 +49,13 @@ def get_customers():
     Endpoint for getting customers
     """
     customers = app_ctx.billing.get_customers()
-    return response([
-        {
-            "id": customer.id,
-            "registerDate": customer.register_date.isoformat()
-        }
-        for customer in customers
-    ])
+    return response(
+        CustomersModel.parse_obj([
+            CustomerModel.from_orm(customer)
+            for customer in customers
+        ]).json(by_alias=True),
+        dump=False
+    )
 
 
 @bp.route('/customers/<customer_id>/accounts', methods=['GET'])
@@ -57,15 +64,13 @@ def get_customer_accounts(customer_id):
     Endpoint for getting customer's accounts
     """
     accounts = app_ctx.billing.get_customer_accounts(customer_id)
-    return response([
-        {
-            "customerId": account.customer_id,
-            "id": account.id,
-            "balance": float(account.balance),
-            "createDate": account.create_date.isoformat()
-        }
-        for account in accounts
-    ])
+    return response(
+        AccountsModel.parse_obj([
+            AccountModel.from_orm(account)
+            for account in accounts
+        ]).json(by_alias=True),
+        dump=False
+    )
 
 
 @bp.route('/customers', methods=['POST'])
@@ -74,10 +79,9 @@ def create_customer():
     Endpoint for registering new customer
     """
     data = app_ctx.billing.register_customer()
-    return {
-        "customerId": data.customer_id,
-        "accountId": data.current_account_id
-    }
+    return (RegisterCustomerModel
+            .from_orm(data)
+            .dict(by_alias=True))
 
 
 @bp.route('/txn', methods=['POST'])
@@ -87,20 +91,14 @@ def add_txn():
     :return: domains
     """
     data = request.get_json()
-    if not data.get('debitAccountId'):
-        raise BadRequest('Field "debitAccountId" is required')
-    if not data.get('amount'):
-        raise BadRequest('Field "amount" is required')
 
-    txn = billing.Transaction(
-        amount=_to_float(data.get('amount')),
-        credit_account_id=data.get('creditAccountId'),
-        debit_account_id=data.get('debitAccountId'),
-        create_date=datetime.now()
-    )
+    try:
+        txn = TransactionModel.parse_obj(data)
+    except ValidationError as err:
+        raise BadRequest(str(err))
 
     app_ctx.process_txn.apply_async(
-        args=[txn.dump()],
+        args=[txn.json(by_alias=True)],
         queue=queue_name(txn))
 
     resp = success_response()
@@ -113,17 +111,8 @@ def get_operations(account_id):
     Endpoint for getting operations
     """
     operations = app_ctx.billing.get_account_operations(account_id)
-    return response({
-        "accountId": operations.account_id,
-        "balance": float(operations.balance),
-        "createDate": operations.create_date.isoformat(),
-        "customerId": operations.customer_id,
-        "operations": [
-            {
-                "amount": float(operation.amount),
-                "balance": float(operation.balance),
-                "date": operation.date.isoformat(),
-            }
-            for operation in operations.operations
-        ]
-    })
+    return response(
+        (AccountOperationsModel
+         .from_orm(operations)
+         .json(by_alias=True)),
+        dump=False)
