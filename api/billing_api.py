@@ -24,13 +24,6 @@ from .responses import (Statuses,
 bp = Blueprint('billing_api', __name__, url_prefix='/api/v1/billing/')
 
 
-def _to_float(value):
-    try:
-        return float(value)
-    except (ValueError, TypeError):
-        return BadRequest('Float type expected.')
-
-
 @bp.errorhandler(billing.NotFound)
 def _handle_not_found(ex):
     return (error_response(str(ex)),
