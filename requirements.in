@@ -7,5 +7,5 @@ psycopg2==2.8.5
 jsonschema==3.2.0
 fire==0.3.1
 celery==4.4.6
-pydantic==1.6.1
+pydantic==1.6.2
 pylint==2.5.0
